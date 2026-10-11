@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+/**
+ * Paleta Kaizen.
+ *
+ * A cor da marca e #00a5ac (marca-500), um teal de matiz 182. A escala foi
+ * gerada a partir dela mantendo o matiz e variando saturacao e luminosidade.
+ *
+ * ATENCAO ao usar: #00a5ac tem contraste 3.01:1 com branco, ou seja, NAO passa
+ * no WCAG AA (4.5:1) para texto normal. Por isso:
+ *
+ *   marca-500  #00a5ac  a marca em si - logo, hero, bordas, anel de foco,
+ *                       estados ativos. Superficie, nunca texto pequeno.
+ *   marca-700  #006e73  6.04:1 com branco - botao primario, link, qualquer
+ *                       coisa que carregue texto.
+ *   marca-800  #02565a  8.46:1 - hover de botao, texto sobre fundo claro.
+ *   marca-50/100        fundos sutis de selecao e badge.
+ */
+@theme {
+  --color-marca-50:  #f0fbfc;
+  --color-marca-100: #d9f6f7;
+  --color-marca-200: #abeaed;
+  --color-marca-300: #6cd6da;
+  --color-marca-400: #19c1c8;
+  --color-marca-500: #00a5ac;
+  --color-marca-600: #00898f;
+  --color-marca-700: #006e73;
+  --color-marca-800: #02565a;
+  --color-marca-900: #044144;
+
+  /* Neutros com um toque frio, para conversarem com o teal em vez de
+     brigarem com ele. */
+  --color-tinta-50:  #f6f9fa;
+  --color-tinta-100: #eceff1;
+  --color-tinta-200: #dde3e6;
+  --color-tinta-300: #c5ced3;
+  --color-tinta-400: #8d9ba3;
+  --color-tinta-500: #5f6f78;
+  --color-tinta-600: #47565e;
+  --color-tinta-700: #334249;
+  --color-tinta-800: #1f2c32;
+  --color-tinta-900: #111c21;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-tinta-50 text-tinta-800 antialiased;
+}
+
+/* Foco visivel em tudo que recebe teclado: navegacao por Tab precisa enxergar
+   onde esta. Usa a cor da marca - aqui ela e contorno, nao texto. */
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-marca-600;
+}
