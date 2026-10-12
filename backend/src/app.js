@@ -22,10 +22,11 @@ export function criarApp() {
   app.set('trust proxy', true);
   app.disable('x-powered-by');
 
-  // O front roda em outra porta durante o desenvolvimento e estava dando erro
-  // de CORS no preflight. Refletir a origem da requisicao resolve em qualquer
-  // porta, sem precisar ficar ajustando a lista a cada ambiente.
-  app.use(cors({ origin: true, credentials: true }));
+  // Front e API ficam na mesma origem. CORS so existe em desenvolvimento,
+  // restrito a CORS_ORIGEM.
+  if (!emProducao) {
+    app.use(cors({ origin: config.corsOrigem, credentials: true }));
+  }
 
   app.use(identificarRequisicao);
   app.use(registrarAcesso);
