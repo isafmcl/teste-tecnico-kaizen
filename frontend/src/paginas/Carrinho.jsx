@@ -56,7 +56,7 @@ function LinhaItem({ item, aoAlterar, aoRemover, ocupado }) {
             type="button"
             onClick={() => aoRemover(item.codigo_produto)}
             disabled={ocupado}
-            className="text-sm text-tinta-500 underline hover:text-red-600 disabled:opacity-50"
+            className="text-sm text-tinta-500 underline hover:text-red-700 disabled:opacity-50"
           >
             Remover
           </button>
@@ -109,7 +109,7 @@ export function Carrinho() {
           type="button"
           onClick={() => executar(limpar)}
           disabled={ocupado}
-          className="text-sm text-tinta-500 underline hover:text-red-600 disabled:opacity-50"
+          className="text-sm text-tinta-500 underline hover:text-red-700 disabled:opacity-50"
         >
           Esvaziar
         </button>

@@ -80,7 +80,7 @@ export function Campo({ rotulo, erro, dica, id, className = '', children, ...pro
       )}
 
       {erro && (
-        <p id={idErro} className="mt-1.5 text-sm text-red-600">
+        <p id={idErro} className="mt-1.5 text-sm text-red-700">
           {erro}
         </p>
       )}
