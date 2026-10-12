@@ -92,7 +92,7 @@ export function Cabecalho() {
                   <span
                     className="absolute -right-0.5 -top-0.5 grid size-5 place-items-center
                       rounded-full bg-marca-700 text-[11px] font-bold text-white"
-                    aria-label={`${carrinho.quantidade_pecas} itens no carrinho`}
+                    aria-label={`${carrinho.quantidade_pecas} ${carrinho.quantidade_pecas === 1 ? 'peça' : 'peças'} no carrinho`}
                   >
                     {carrinho.quantidade_pecas > 99 ? '99+' : carrinho.quantidade_pecas}
                   </span>

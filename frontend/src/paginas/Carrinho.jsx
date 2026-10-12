@@ -143,7 +143,7 @@ export function Carrinho() {
 
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">
-              <dt className="text-tinta-600">Itens</dt>
+              <dt className="text-tinta-600">Peças</dt>
               <dd className="font-medium">{carrinho.quantidade_pecas}</dd>
             </div>
             <div className="flex justify-between border-t border-tinta-200 pt-3 text-base">
