@@ -101,6 +101,7 @@ export async function finalizarPedido(usuario, enderecoId, observacao, db = obte
         agoraISO(),
       );
 
+      // So os itens do carrinho ativo. O carrinho em si permanece.
       limparCarrinho(usuario.id, db);
     })();
   } catch (erro) {

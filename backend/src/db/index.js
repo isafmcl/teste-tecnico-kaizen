@@ -18,9 +18,36 @@ export function obterBanco() {
   return instancia;
 }
 
+const VERSOES = [
+  { versao: 1, arquivo: new URL('./schema.sql', import.meta.url) },
+  { versao: 2, arquivo: new URL('./migracoes/002_carrinhos.sql', import.meta.url) },
+];
+
+/**
+ * SQL e user_version entram na mesma transacao. O commit grava os dois
+ * juntos: se o processo cair antes, a migracao nao fica aplicada com a
+ * versao antiga. Se o SQL falhar, a transacao desfaz as tabelas e a
+ * versao nao avanca.
+ */
+export function aplicarVersao(db, versao, sql) {
+  const transacao = db.transaction(() => {
+    db.exec(sql);
+    db.pragma(`user_version = ${versao}`);
+  });
+
+  transacao();
+}
+
 export function aplicarSchema(db = obterBanco()) {
-  const ddl = fs.readFileSync(new URL('./schema.sql', import.meta.url), 'utf8');
-  db.exec(ddl);
+  // Fora de transacao: o PRAGMA foreign_keys nao muda no meio de uma.
+  db.pragma('foreign_keys = ON');
+
+  for (const etapa of VERSOES) {
+    if (db.pragma('user_version', { simple: true }) >= etapa.versao) continue;
+
+    const sql = fs.readFileSync(etapa.arquivo, 'utf8');
+    aplicarVersao(db, etapa.versao, sql);
+  }
 }
 
 export function fecharBanco() {
