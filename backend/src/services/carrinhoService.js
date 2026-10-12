@@ -83,7 +83,7 @@ export async function lerCarrinho(usuarioId, db = obterBanco()) {
   const itens = await enriquecerItens(linhas);
 
   const totalCentavos = itens.reduce(
-    (soma, item) => soma + paraCentavos(item.valor_total),
+    (soma, item) => (item.disponivel ? soma + paraCentavos(item.valor_total) : soma),
     0,
   );
 
