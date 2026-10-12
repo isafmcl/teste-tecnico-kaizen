@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contextos/AuthContext.jsx';
 import { useCarrinho } from '../contextos/CarrinhoContext.jsx';
+import { aplicarParametroCatalogo } from '../lib/parametrosCatalogo.js';
 
 function ItemMenu({ para, children }) {
   return (
@@ -36,11 +37,8 @@ export function Cabecalho() {
     const termo = busca.trim();
 
     // Preserva os filtros que ja estavam aplicados na vitrine.
-    const atuais = new URLSearchParams(window.location.search);
-    if (termo) atuais.set('busca', termo);
-    else atuais.delete('busca');
-
-    navegar(`/?${atuais.toString()}`);
+    const proximos = aplicarParametroCatalogo(window.location.search, 'busca', termo);
+    navegar(`/?${proximos.toString()}`);
   }
 
   async function encerrarSessao() {

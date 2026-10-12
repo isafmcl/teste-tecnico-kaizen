@@ -5,6 +5,7 @@ import { useAuth } from '../contextos/AuthContext.jsx';
 import { useCarrinho } from '../contextos/CarrinhoContext.jsx';
 import { CardProduto } from '../componentes/CardProduto.jsx';
 import { Alerta, Botao, Carregando, EstadoVazio, Paginacao } from '../componentes/ui.jsx';
+import { aplicarParametroCatalogo } from '../lib/parametrosCatalogo.js';
 
 /**
  * Os filtros vivem na URL (?busca=&categoria=&pagina=), nao no estado do
@@ -69,12 +70,7 @@ export function Catalogo() {
 
   const trocarParametro = useCallback(
     (chave, valor) => {
-      const proximos = new URLSearchParams(parametros);
-
-      if (valor === null || valor === '' || valor === false) proximos.delete(chave);
-      else proximos.set(chave, String(valor));
-
-      setParametros(proximos);
+      setParametros(aplicarParametroCatalogo(parametros, chave, valor));
     },
     [parametros, setParametros],
   );
