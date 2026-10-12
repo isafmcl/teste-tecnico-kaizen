@@ -50,9 +50,7 @@ export function Checkout() {
     setEnviando(true);
 
     try {
-      // Entrega vai para o endereco principal do cliente.
-      const entrega = enderecos.find((item) => item.principal) ?? enderecos[0];
-      const resposta = await api.pedidos.criar({ endereco_id: entrega?.id, observacao });
+      const resposta = await api.pedidos.criar({ endereco_id: enderecoId, observacao });
       await recarregar();
       navegar(`/pedidos/${resposta.dados.numero}`, { replace: true, state: { novo: true } });
     } catch (falha) {
