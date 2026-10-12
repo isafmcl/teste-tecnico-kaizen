@@ -4,7 +4,7 @@
  */
 
 export function paraCentavos(reais) {
-  return Math.floor(Number(reais) * 100);
+  return Math.round(Number(reais) * 100);
 }
 
 export function paraReais(centavos) {
