@@ -203,7 +203,7 @@ export function Paginacao({ paginacao, aoMudar }) {
         <Botao
           variante="contorno"
           tamanho="pequeno"
-          disabled={pagina >= totalPaginas - 1}
+          disabled={pagina >= totalPaginas}
           onClick={() => aoMudar(pagina + 1)}
         >
           Próxima
