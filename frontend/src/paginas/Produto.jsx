@@ -130,7 +130,7 @@ export function Produto() {
 
           <p className="mt-1 text-sm">
             {semEstoque ? (
-              <span className="font-medium text-red-600">Sem estoque no momento</span>
+              <span className="font-medium text-red-700">Sem estoque no momento</span>
             ) : produto.estoque <= 5 ? (
               <span className="font-medium text-amber-700">
                 Últimas {produto.estoque} unidades

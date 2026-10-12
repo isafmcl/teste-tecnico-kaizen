@@ -81,9 +81,27 @@ export function atualizarEndereco(usuarioId, id, dados, db = obterBanco()) {
   const atual = exigirEndereco(usuarioId, id, db);
 
   const transacao = db.transaction(() => {
+    // Campo ausente no PUT: nao mexe na flag.
     const principal = dados.principal === undefined
       ? atual.principal
       : (dados.principal ? 1 : 0);
+
+    // Desmarcar o principal deixaria o cliente sem padrao. Trocar o padrao
+    // e marcar outro endereco, que desmarca este.
+    if (atual.principal === 1 && principal === 0) {
+      const { total } = db
+        .prepare('SELECT COUNT(*) AS total FROM enderecos WHERE usuario_id = ?')
+        .get(usuarioId);
+
+      throw ApiError.naoProcessavel('Nao foi possivel salvar o endereco.', [
+        {
+          campo: 'principal',
+          mensagem: total > 1
+            ? 'Marque outro endereco como principal antes de desmarcar este.'
+            : 'Seu unico endereco precisa ser o principal.',
+        },
+      ]);
+    }
 
     db.prepare(`
       UPDATE enderecos

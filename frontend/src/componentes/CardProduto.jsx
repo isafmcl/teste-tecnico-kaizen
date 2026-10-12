@@ -42,7 +42,7 @@ export function CardProduto({ produto, aoAdicionar, adicionando = false }) {
 
         <p className="mt-0.5 text-xs text-tinta-500">
           {semEstoque ? (
-            <span className="font-medium text-red-600">Sem estoque</span>
+            <span className="font-medium text-red-700">Sem estoque</span>
           ) : produto.estoque <= 5 ? (
             <span className="font-medium text-amber-700">Últimas {produto.estoque} unidades</span>
           ) : (

@@ -5,9 +5,36 @@ import * as erp from '../erp/cliente.js';
 import { buscarEndereco, serializarEndereco } from './enderecoService.js';
 import { lerCarrinho, limparCarrinho } from './carrinhoService.js';
 
+// Teto do campo observacao no SIAC. O ERP responde 422
+// "Deve ter no maximo 500 caracteres". A ARQUITETURA.md nao documenta o numero.
+const LIMITE_OBSERVACAO_ERP = 500;
+
 function enderecoEmUmaLinha(e) {
   const complemento = e.complemento ? `, ${e.complemento}` : '';
   return `${e.logradouro}, ${e.numero}${complemento} - ${e.bairro}, ${e.cidade}/${e.uf} - CEP ${e.cep}`;
+}
+
+/**
+ * O SIAC nao tem campo de entrega: endereco e nota vao juntos na observacao.
+ * Nunca corta. Se nao couber, recusa antes de criar o pedido no ERP.
+ */
+function montarObservacaoErp(endereco, observacao) {
+  const entrega = `Entrega: ${enderecoEmUmaLinha(endereco)}`;
+  const partes = [entrega];
+  if (observacao) partes.push(`Obs. do cliente: ${observacao}`);
+
+  const texto = partes.join(' | ');
+  if (texto.length <= LIMITE_OBSERVACAO_ERP) return texto;
+
+  const reservado = entrega.length + ' | Obs. do cliente: '.length;
+  const maximo = Math.max(0, LIMITE_OBSERVACAO_ERP - reservado);
+
+  throw ApiError.naoProcessavel('Nao foi possivel fechar o pedido.', [
+    {
+      campo: 'observacao',
+      mensagem: `Para este endereco, a observacao pode ter no maximo ${maximo} caracteres.`,
+    },
+  ]);
 }
 
 /**
@@ -25,6 +52,9 @@ export async function finalizarPedido(usuario, enderecoId, observacao, db = obte
     ]);
   }
 
+  const endereco = serializarEndereco(enderecoLinha);
+  const textoObservacao = montarObservacaoErp(endereco, observacao);
+
   const carrinho = await lerCarrinho(usuario.id, db);
 
   if (carrinho.itens.length === 0) {
@@ -41,16 +71,9 @@ export async function finalizarPedido(usuario, enderecoId, observacao, db = obte
     );
   }
 
-  const endereco = serializarEndereco(enderecoLinha);
-
-  // O ERP nao tem campo de endereco de entrega; vai na observacao, que e como
-  // o SIAC recebe esse dado hoje.
-  const partesObservacao = [`Entrega: ${enderecoEmUmaLinha(endereco)}`];
-  if (observacao) partesObservacao.push(`Obs. do cliente: ${observacao}`);
-
   const pedidoErp = await erp.criarPedido({
     cliente: { nome: usuario.nome, documento: usuario.documento },
-    observacao: partesObservacao.join(' | ').slice(0, 500),
+    observacao: textoObservacao,
     itens: carrinho.itens.map((item) => ({
       codigo_produto: item.codigo_produto,
       quantidade: item.quantidade,

@@ -20,8 +20,11 @@ export const rotasEnderecos = Router();
 
 rotasEnderecos.use(autenticar);
 
-function validarEndereco(corpo) {
+function validarEndereco(corpo, { principalAusenteMantem = false } = {}) {
   const erros = new ColetorDeErros();
+  const principalAusente = corpo.principal === undefined
+    || corpo.principal === null
+    || corpo.principal === '';
 
   const dados = {
     apelido: textoObrigatorio(corpo.apelido, 'apelido', erros, { min: 2, max: 40 }),
@@ -32,7 +35,11 @@ function validarEndereco(corpo) {
     bairro: textoObrigatorio(corpo.bairro, 'bairro', erros, { min: 2, max: 80 }),
     cidade: textoObrigatorio(corpo.cidade, 'cidade', erros, { min: 2, max: 80 }),
     uf: uf(corpo.uf, 'uf', erros),
-    principal: lerBooleano(corpo.principal) ?? false,
+    // POST sem o campo continua false. PUT sem o campo deixa undefined para
+    // o service manter o valor que ja esta gravado.
+    principal: principalAusenteMantem && principalAusente
+      ? undefined
+      : (lerBooleano(corpo.principal) ?? false),
   };
 
   erros.lancarSeInvalido('Nao foi possivel salvar o endereco.');
@@ -49,7 +56,7 @@ rotasEnderecos.post('/', (req, res) => {
 });
 
 rotasEnderecos.put('/:id', (req, res) => {
-  const dados = validarEndereco(exigirObjeto(req.body));
+  const dados = validarEndereco(exigirObjeto(req.body), { principalAusenteMantem: true });
   res.json({ dados: atualizarEndereco(req.usuario.id, Number(req.params.id), dados) });
 });
 
