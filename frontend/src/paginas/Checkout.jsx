@@ -186,6 +186,12 @@ export function Checkout() {
           </div>
 
           {!carrinho.pronto_para_checkout && (
+            <p className="mt-2 text-sm text-tinta-600">
+              Itens com pendência não entram no total.
+            </p>
+          )}
+
+          {!carrinho.pronto_para_checkout && (
             <Alerta tipo="aviso" className="mt-4">
               Há itens com pendência no carrinho.
             </Alerta>

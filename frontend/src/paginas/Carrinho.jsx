@@ -152,6 +152,12 @@ export function Carrinho() {
             </div>
           </dl>
 
+          {!carrinho.pronto_para_checkout && (
+            <p className="mt-2 text-sm text-tinta-600">
+              Itens com pendência não entram no total.
+            </p>
+          )}
+
           <Link to="/checkout" className="mt-5 block">
             <Botao
               tamanho="grande"
