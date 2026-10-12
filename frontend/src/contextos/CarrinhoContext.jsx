@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from '../api/cliente.js';
+import { useAuth } from './AuthContext.jsx';
 
 const CarrinhoContext = createContext(null);
 
@@ -17,8 +18,10 @@ const VAZIO = {
  * contra o ERP na hora de ler.
  */
 export function ProvedorCarrinho({ children }) {
+  const { usuario, carregando: verificandoSessao } = useAuth();
   const [carrinho, setCarrinho] = useState(VAZIO);
   const [carregando, setCarregando] = useState(false);
+  const usuarioId = usuario?.id ?? null;
 
   const recarregar = useCallback(async () => {
     setCarregando(true);
@@ -33,10 +36,36 @@ export function ProvedorCarrinho({ children }) {
     }
   }, []);
 
-  // Carrega o carrinho na abertura da loja.
+  // Sem sessao o carrinho some; com usuario, busca o dele. Depende do id
+  // para nao disparar de novo a cada render do objeto usuario.
   useEffect(() => {
-    recarregar();
-  }, [recarregar]);
+    if (verificandoSessao) return;
+
+    if (usuarioId == null) {
+      setCarrinho(VAZIO);
+      setCarregando(false);
+      return;
+    }
+
+    let ativo = true;
+    setCarregando(true);
+
+    api.carrinho
+      .ler()
+      .then((resposta) => {
+        if (ativo) setCarrinho(resposta.dados);
+      })
+      .catch(() => {
+        if (ativo) setCarrinho(VAZIO);
+      })
+      .finally(() => {
+        if (ativo) setCarregando(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [verificandoSessao, usuarioId]);
 
   const adicionar = useCallback(async (codigo, quantidade = 1) => {
     const resposta = await api.carrinho.adicionar(codigo, quantidade);

@@ -11,13 +11,8 @@ const raizProjeto = path.resolve(fileURLToPath(new URL('../', import.meta.url)))
  * resumo de entrega - queremos saber que partes do projeto foram lidas de fato.
  */
 
-// Valores usados quando nao ha .env, para a aplicacao subir logo depois do
-// clone sem ninguem precisar configurar nada.
-const PADRAO = {
-  jwtSegredo: 'kaizen-loja-2026-jwt-a8f3c1e9b24d7a6530f1',
-  erpUrl: 'https://teste-tecnico.kaizenautopecas.com.br',
-  erpToken: 'b54641e0c66bdea35d606175a4a16087ef4fc955e83b494696e422e8099bc78b',
-};
+// JWT_SEGREDO, ERP_URL e ERP_TOKEN nao tem padrao no codigo: sem eles no
+// .env, validarConfig barra a subida.
 
 function resolverCaminho(bruto, padrao) {
   const valor = bruto?.trim() || padrao;
@@ -33,14 +28,14 @@ export const config = {
   caminhoBanco: resolverCaminho(process.env.DB_PATH, './data/ecommerce.db'),
 
   jwt: {
-    segredo: process.env.JWT_SEGREDO?.trim() || PADRAO.jwtSegredo,
+    segredo: process.env.JWT_SEGREDO?.trim() || '',
     expiracao: process.env.JWT_EXPIRACAO?.trim() || '7d',
     nomeCookie: 'kaizen_sessao',
   },
 
   erp: {
-    url: (process.env.ERP_URL?.trim() || PADRAO.erpUrl).replace(/\/+$/, ''),
-    token: process.env.ERP_TOKEN?.trim() || PADRAO.erpToken,
+    url: (process.env.ERP_URL?.trim() || '').replace(/\/+$/, ''),
+    token: process.env.ERP_TOKEN?.trim() || '',
     timeoutMs: Number(process.env.ERP_TIMEOUT_MS ?? 8000),
   },
 
@@ -64,6 +59,8 @@ export function validarConfig() {
 
   if (!config.erp.token) {
     problemas.push('ERP_TOKEN nao definido. Use o API_TOKEN do kaizen-erp.');
+  } else if (config.erp.token === 'cole-aqui-o-API_TOKEN-do-kaizen-erp') {
+    problemas.push('ERP_TOKEN ainda esta com o valor de exemplo.');
   }
 
   if (!/^https?:\/\//.test(config.erp.url)) {
