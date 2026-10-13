@@ -60,14 +60,6 @@ export function ProvedorCarrinho({ children }) {
     )));
   }, []);
 
-  const setCarrinho = useCallback((valor) => {
-    setCarrinhoAtivo((atual) => {
-      const proximo = typeof valor === 'function' ? valor(atual) : valor;
-      idAtivo.current = proximo?.id ?? null;
-      return proximo ?? VAZIO;
-    });
-  }, []);
-
   const carregar = useCallback(async (ainda = () => true) => {
     const selo = sessao.current;
     const segue = () => ainda() && sessao.current === selo;
@@ -228,7 +220,6 @@ export function ProvedorCarrinho({ children }) {
       renomear,
       apagar,
       ativar,
-      setCarrinho,
       painelAberto,
       abrirPainel,
       fecharPainel,
@@ -246,7 +237,6 @@ export function ProvedorCarrinho({ children }) {
       renomear,
       apagar,
       ativar,
-      setCarrinho,
       painelAberto,
       abrirPainel,
       fecharPainel,

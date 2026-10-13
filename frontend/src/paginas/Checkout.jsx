@@ -6,7 +6,7 @@ import { FormularioEndereco } from '../componentes/FormularioEndereco.jsx';
 import { Alerta, Botao, Carregando, ErroGeral, EstadoVazio } from '../componentes/ui.jsx';
 
 export function Checkout() {
-  const { carrinho, carregando: carregandoCarrinho, recarregar } = useCarrinho();
+  const { carrinho, carrinhos, carregando: carregandoCarrinho, recarregar } = useCarrinho();
   const navegar = useNavigate();
 
   const [enderecos, setEnderecos] = useState([]);
@@ -50,9 +50,13 @@ export function Checkout() {
     setEnviando(true);
 
     try {
-      const resposta = await api.pedidos.criar({ endereco_id: enderecoId, observacao });
-      await recarregar();
+      const resposta = await api.pedidos.criar({
+        endereco_id: enderecoId,
+        observacao,
+        carrinho_id: carrinho.id,
+      });
       navegar(`/pedidos/${resposta.dados.numero}`, { replace: true, state: { novo: true } });
+      recarregar();
     } catch (falha) {
       setErro(falha);
       // O estoque pode ter mudado entre abrir o checkout e confirmar: recarrega
@@ -62,6 +66,12 @@ export function Checkout() {
       setEnviando(false);
     }
   }
+
+  const statusAtivo = carrinhos.find((item) => item.id === carrinho.id)?.status;
+  const emFechamento = statusAtivo === 'FECHANDO' || erro?.codigo === 'CARRINHO_EM_FECHAMENTO';
+  const mensagemFechamento = erro?.codigo === 'CARRINHO_EM_FECHAMENTO'
+    ? erro.message
+    : 'Esse carrinho já está sendo fechado.';
 
   if (carregando || carregandoCarrinho) return <Carregando texto="Preparando o checkout..." />;
 
@@ -77,9 +87,19 @@ export function Checkout() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-tinta-900">Fechar pedido</h1>
+      <div>
+        <h1 className="text-2xl font-bold text-tinta-900">Fechar pedido</h1>
+        <p className="mt-1 text-sm text-tinta-600">
+          Carrinho <span className="font-semibold text-tinta-900">{carrinho.nome || 'Carrinho'}</span>
+        </p>
+      </div>
 
-      <ErroGeral erro={erro} camposConhecidos={[]} />
+      {emFechamento && <Alerta tipo="erro">{mensagemFechamento}</Alerta>}
+
+      <ErroGeral
+        erro={erro?.codigo === 'CARRINHO_EM_FECHAMENTO' ? null : erro}
+        camposConhecidos={[]}
+      />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
@@ -201,7 +221,7 @@ export function Checkout() {
             tamanho="grande"
             className="mt-5 w-full"
             carregando={enviando}
-            disabled={!enderecoId || !carrinho.pronto_para_checkout}
+            disabled={!enderecoId || !carrinho.pronto_para_checkout || emFechamento}
             onClick={finalizar}
           >
             Confirmar pedido
