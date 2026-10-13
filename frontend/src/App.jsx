@@ -1,4 +1,5 @@
 import { Link, Route, Routes } from 'react-router-dom';
+import { BarraCarrinho } from './componentes/BarraCarrinho.jsx';
 import { Cabecalho } from './componentes/Cabecalho.jsx';
 import { PainelCarrinho } from './componentes/painel/PainelCarrinho.jsx';
 import { RotaProtegida } from './componentes/RotaProtegida.jsx';
@@ -67,6 +68,7 @@ export function App() {
           </p>
         </div>
       </footer>
+      <BarraCarrinho />
     </div>
     <PainelCarrinho />
     </>

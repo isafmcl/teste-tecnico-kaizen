@@ -62,11 +62,15 @@ export function Cabecalho() {
 
   return (
     <header className="sticky top-0 z-20 border-b border-tinta-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center gap-x-4 px-4 py-3">
-        <Link to="/" className="flex items-center gap-2 text-lg font-bold text-tinta-900">
+      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_minmax(0,auto)] items-center
+        gap-x-3 gap-y-3 px-4 py-3 lg:flex lg:flex-nowrap lg:gap-x-4">
+        <Link
+          to="/"
+          className="col-start-1 row-start-1 flex items-center gap-2 text-base font-bold text-tinta-900 sm:text-lg"
+        >
           {/* O K e grande e bold, entao 3:1 basta e o quadrado pode levar o
               #00a5ac exato - e onde a marca mais aparece. */}
-          <span className="grid size-9 place-items-center rounded-lg bg-marca-500
+          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-marca-500
             text-xl font-bold text-white">K</span>
           <span>
             {/* marca-700, nao 600: a 18px bold isto nao conta como "texto
@@ -75,7 +79,10 @@ export function Cabecalho() {
           </span>
         </Link>
 
-        <form onSubmit={pesquisar} className="min-w-[380px] flex-1">
+        <form
+          onSubmit={pesquisar}
+          className="col-span-2 row-start-2 min-w-0 lg:col-auto lg:row-auto lg:min-w-[380px] lg:flex-1"
+        >
           <label htmlFor="busca-topo" className="sr-only">
             Buscar peças
           </label>
@@ -91,26 +98,19 @@ export function Cabecalho() {
           />
         </form>
 
-        <nav className="ml-auto flex items-center gap-1">
+        <nav className="col-start-2 row-start-1 flex min-w-0 items-center gap-1 overflow-x-auto py-0.5
+          lg:col-auto lg:row-auto lg:ml-0 lg:overflow-visible">
           {autenticado ? (
             <>
               <ItemMenu para="/pedidos">Pedidos</ItemMenu>
               <ItemMenu para="/perfil">Perfil</ItemMenu>
-
-              <Link
-                to="/carrinho"
-                className="relative rounded-lg px-3 py-2 text-sm font-medium text-tinta-600 hover:bg-tinta-100 lg:hidden"
-              >
-                Carrinho
-                <SeloPecas quantidade={carrinho.quantidade_pecas} />
-              </Link>
 
               <button
                 type="button"
                 onClick={abrirPainel}
                 aria-expanded={painelAberto}
                 aria-controls="painel-carrinho"
-                className="relative hidden rounded-lg px-3 py-2 text-sm font-medium text-tinta-600 hover:bg-tinta-100 lg:inline-flex"
+                className="relative shrink-0 rounded-lg px-3 py-2 text-sm font-medium text-tinta-600 hover:bg-tinta-100"
               >
                 Carrinho
                 <SeloPecas quantidade={carrinho.quantidade_pecas} />
