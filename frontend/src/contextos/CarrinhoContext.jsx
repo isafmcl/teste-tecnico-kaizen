@@ -1,10 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../api/cliente.js';
 import { useAuth } from './AuthContext.jsx';
 
 const CarrinhoContext = createContext(null);
 
 const VAZIO = {
+  id: null,
+  nome: null,
   itens: [],
   quantidade_itens: 0,
   quantidade_pecas: 0,
@@ -19,22 +21,78 @@ const VAZIO = {
  */
 export function ProvedorCarrinho({ children }) {
   const { usuario, carregando: verificandoSessao } = useAuth();
-  const [carrinho, setCarrinho] = useState(VAZIO);
+  const [carrinhos, setCarrinhos] = useState([]);
+  const [carrinhoAtivo, setCarrinhoAtivo] = useState(VAZIO);
   const [carregando, setCarregando] = useState(false);
   const usuarioId = usuario?.id ?? null;
+  const idAtivo = useRef(null);
 
-  const recarregar = useCallback(async () => {
+  // Selo da sessao: a resposta so entra no estado se o usuario de agora
+  // for o mesmo de quando a requisicao saiu. Trocar de conta no meio
+  // nao pode pintar o carrinho de quem saiu.
+  const sessao = useRef(usuarioId);
+  sessao.current = usuarioId;
+
+  const comSelo = useCallback(async (trabalho, aplicar) => {
+    const selo = sessao.current;
+    const resposta = await trabalho();
+    if (sessao.current === selo) aplicar(resposta);
+    return resposta;
+  }, []);
+
+  const aplicarAtivo = useCallback((dados) => {
+    const proximo = dados?.id != null ? dados : VAZIO;
+    idAtivo.current = proximo.id ?? null;
+    setCarrinhoAtivo(proximo);
+    if (proximo.id == null) return;
+
+    setCarrinhos((lista) => lista.map((item) => (
+      item.id === proximo.id
+        ? {
+            ...item,
+            nome: proximo.nome ?? item.nome,
+            quantidade_pecas: proximo.quantidade_pecas ?? item.quantidade_pecas,
+          }
+        : item
+    )));
+  }, []);
+
+  const setCarrinho = useCallback((valor) => {
+    setCarrinhoAtivo((atual) => {
+      const proximo = typeof valor === 'function' ? valor(atual) : valor;
+      idAtivo.current = proximo?.id ?? null;
+      return proximo ?? VAZIO;
+    });
+  }, []);
+
+  const carregar = useCallback(async (ainda = () => true) => {
+    const selo = sessao.current;
+    const segue = () => ainda() && sessao.current === selo;
     setCarregando(true);
+
     try {
-      const resposta = await api.carrinho.ler();
-      setCarrinho(resposta.dados);
+      const [lista, leitura] = await Promise.all([
+        api.carrinhos.listar(),
+        api.carrinho.ler(),
+      ]);
+      if (!segue()) return;
+
+      setCarrinhos(lista.dados);
+      setCarrinhoAtivo(leitura.dados);
+      idAtivo.current = leitura.dados.id ?? null;
     } catch {
       // 401 quando nao ha sessao: segue com o carrinho vazio.
-      setCarrinho(VAZIO);
+      if (segue()) {
+        idAtivo.current = null;
+        setCarrinhos([]);
+        setCarrinhoAtivo(VAZIO);
+      }
     } finally {
-      setCarregando(false);
+      if (segue()) setCarregando(false);
     }
   }, []);
+
+  const recarregar = useCallback(() => carregar(), [carregar]);
 
   // Sem sessao o carrinho some; com usuario, busca o dele. Depende do id
   // para nao disparar de novo a cada render do objeto usuario.
@@ -42,54 +100,125 @@ export function ProvedorCarrinho({ children }) {
     if (verificandoSessao) return;
 
     if (usuarioId == null) {
-      setCarrinho(VAZIO);
+      idAtivo.current = null;
+      setCarrinhos([]);
+      setCarrinhoAtivo(VAZIO);
       setCarregando(false);
       return;
     }
 
     let ativo = true;
-    setCarregando(true);
-
-    api.carrinho
-      .ler()
-      .then((resposta) => {
-        if (ativo) setCarrinho(resposta.dados);
-      })
-      .catch(() => {
-        if (ativo) setCarrinho(VAZIO);
-      })
-      .finally(() => {
-        if (ativo) setCarregando(false);
-      });
+    carregar(() => ativo);
 
     return () => {
       ativo = false;
     };
-  }, [verificandoSessao, usuarioId]);
+  }, [verificandoSessao, usuarioId, carregar]);
 
-  const adicionar = useCallback(async (codigo, quantidade = 1) => {
-    const resposta = await api.carrinho.adicionar(codigo, quantidade);
-    setCarrinho(resposta.dados);
-  }, []);
+  const adicionar = useCallback((codigo, quantidade = 1) => comSelo(
+    () => (idAtivo.current == null
+      ? api.carrinho.adicionar(codigo, quantidade)
+      : api.carrinhos.adicionar(idAtivo.current, codigo, quantidade)),
+    (resposta) => aplicarAtivo(resposta.dados),
+  ), [comSelo, aplicarAtivo]);
 
-  const alterar = useCallback(async (codigo, quantidade) => {
-    const resposta = await api.carrinho.alterar(codigo, quantidade);
-    setCarrinho(resposta.dados);
-  }, []);
+  const alterar = useCallback((codigo, quantidade) => comSelo(
+    () => (idAtivo.current == null
+      ? api.carrinho.alterar(codigo, quantidade)
+      : api.carrinhos.alterar(idAtivo.current, codigo, quantidade)),
+    (resposta) => aplicarAtivo(resposta.dados),
+  ), [comSelo, aplicarAtivo]);
 
-  const remover = useCallback(async (codigo) => {
-    const resposta = await api.carrinho.remover(codigo);
-    setCarrinho(resposta.dados);
-  }, []);
+  const remover = useCallback((codigo) => comSelo(
+    () => (idAtivo.current == null
+      ? api.carrinho.remover(codigo)
+      : api.carrinhos.remover(idAtivo.current, codigo)),
+    (resposta) => aplicarAtivo(resposta.dados),
+  ), [comSelo, aplicarAtivo]);
 
-  const limpar = useCallback(async () => {
-    const resposta = await api.carrinho.limpar();
-    setCarrinho(resposta.dados);
-  }, []);
+  const limpar = useCallback(() => comSelo(
+    () => (idAtivo.current == null
+      ? api.carrinho.limpar()
+      : api.carrinhos.limpar(idAtivo.current)),
+    (resposta) => aplicarAtivo(resposta.dados),
+  ), [comSelo, aplicarAtivo]);
+
+  const criar = useCallback((nome) => comSelo(async () => {
+    const criado = await api.carrinhos.criar(nome);
+    const [lista, leitura] = await Promise.all([
+      api.carrinhos.listar(),
+      api.carrinhos.ler(criado.dados.id),
+    ]);
+    return { criado, lista, leitura };
+  }, ({ lista, leitura }) => {
+    setCarrinhos(lista.dados);
+    aplicarAtivo(leitura.dados);
+  }).then((pacote) => pacote.criado), [comSelo, aplicarAtivo]);
+
+  const renomear = useCallback((id, nome) => comSelo(
+    () => api.carrinhos.renomear(id, nome),
+    (resposta) => {
+      const nomeNovo = resposta.dados.nome;
+      setCarrinhos((lista) => lista.map((item) => (
+        item.id === id ? { ...item, nome: nomeNovo } : item
+      )));
+      setCarrinhoAtivo((atual) => (
+        atual.id === id ? { ...atual, nome: nomeNovo } : atual
+      ));
+    },
+  ), [comSelo]);
+
+  const apagar = useCallback((id) => comSelo(async () => {
+    const lista = await api.carrinhos.apagar(id);
+    const escolhido = lista.dados.find((item) => item.ativo);
+    const leitura = escolhido ? await api.carrinhos.ler(escolhido.id) : null;
+    return { lista, leitura };
+  }, ({ lista, leitura }) => {
+    setCarrinhos(lista.dados);
+    aplicarAtivo(leitura?.dados);
+  }), [comSelo, aplicarAtivo]);
+
+  const ativar = useCallback((id) => comSelo(async () => {
+    const lista = await api.carrinhos.ativar(id);
+    const leitura = await api.carrinhos.ler(id);
+    return { lista, leitura };
+  }, ({ lista, leitura }) => {
+    setCarrinhos(lista.dados);
+    aplicarAtivo(leitura.dados);
+  }), [comSelo, aplicarAtivo]);
 
   const valor = useMemo(
-    () => ({ carrinho, carregando, recarregar, adicionar, alterar, remover, limpar, setCarrinho }),
-    [carrinho, carregando, recarregar, adicionar, alterar, remover, limpar],
+    () => ({
+      carrinho: carrinhoAtivo,
+      carrinhoAtivo,
+      carrinhos,
+      carregando,
+      recarregar,
+      adicionar,
+      alterar,
+      remover,
+      limpar,
+      criar,
+      renomear,
+      apagar,
+      ativar,
+      setCarrinho,
+    }),
+    [
+      carrinhoAtivo,
+      carrinhos,
+      carregando,
+      recarregar,
+      adicionar,
+      alterar,
+      remover,
+      limpar,
+      criar,
+      renomear,
+      apagar,
+      ativar,
+      setCarrinho,
+    ],
   );
 
   return <CarrinhoContext.Provider value={valor}>{children}</CarrinhoContext.Provider>;
