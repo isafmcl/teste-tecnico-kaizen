@@ -21,6 +21,7 @@ export function obterBanco() {
 const VERSOES = [
   { versao: 1, arquivo: new URL('./schema.sql', import.meta.url) },
   { versao: 2, arquivo: new URL('./migracoes/002_carrinhos.sql', import.meta.url) },
+  { versao: 3, arquivo: new URL('./migracoes/003_status_carrinho.sql', import.meta.url) },
 ];
 
 /**

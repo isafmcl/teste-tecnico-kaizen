@@ -209,6 +209,12 @@ function buscarCarrinhoDoUsuario(usuarioId, carrinhoId, db) {
   return carrinho;
 }
 
+function recusarSeFechando(carrinho) {
+  if (carrinho.status === 'FECHANDO') {
+    throw ApiError.conflito('CARRINHO_EM_FECHAMENTO', 'Esse carrinho ja esta sendo fechado.');
+  }
+}
+
 function marcarAtualizado(carrinhoId, db) {
   db.prepare('UPDATE carrinhos SET atualizado_em = ? WHERE id = ?').run(agoraISO(), carrinhoId);
 }
@@ -233,7 +239,7 @@ export function listarCarrinhos(usuarioId, db = obterBanco()) {
   const ativo = garantirCarrinhoAtivo(usuarioId, db);
 
   return db.prepare(`
-    SELECT carrinhos.id, carrinhos.nome,
+    SELECT carrinhos.id, carrinhos.nome, carrinhos.status,
            COALESCE(SUM(carrinho_itens.quantidade), 0) AS quantidade_pecas
       FROM carrinhos
       LEFT JOIN carrinho_itens ON carrinho_itens.carrinho_id = carrinhos.id
@@ -243,6 +249,7 @@ export function listarCarrinhos(usuarioId, db = obterBanco()) {
   `).all(usuarioId).map((linha) => ({
     id: linha.id,
     nome: linha.nome,
+    status: linha.status,
     quantidade_pecas: linha.quantidade_pecas,
     ativo: linha.id === ativo.id,
   }));
@@ -275,7 +282,7 @@ export function criarCarrinho(usuarioId, nome, db = obterBanco()) {
 
 export function renomearCarrinho(usuarioId, carrinhoId, nome, db = obterBanco()) {
   return emTransacaoImediata(db, () => {
-    buscarCarrinhoDoUsuario(usuarioId, carrinhoId, db);
+    recusarSeFechando(buscarCarrinhoDoUsuario(usuarioId, carrinhoId, db));
 
     if (nomeOcupado(usuarioId, nome, carrinhoId, db)) throw conflitoNomeEmUso();
 
@@ -289,6 +296,7 @@ export function renomearCarrinho(usuarioId, carrinhoId, nome, db = obterBanco())
 export function apagarCarrinho(usuarioId, carrinhoId, db = obterBanco()) {
   return db.transaction(() => {
     const carrinho = buscarCarrinhoDoUsuario(usuarioId, carrinhoId, db);
+    recusarSeFechando(carrinho);
     const usuario = db.prepare('SELECT carrinho_ativo_id FROM usuarios WHERE id = ?').get(usuarioId);
     const eraAtivo = usuario?.carrinho_ativo_id === carrinho.id;
 
@@ -344,7 +352,7 @@ export async function lerItens(usuarioId, carrinhoId, db = obterBanco()) {
 
 function persistirAdicao(usuarioId, carrinhoId, produto, quantidade, db) {
   db.transaction(() => {
-    buscarCarrinhoDoUsuario(usuarioId, carrinhoId, db);
+    recusarSeFechando(buscarCarrinhoDoUsuario(usuarioId, carrinhoId, db));
 
     const existente = db.prepare(`
       SELECT carrinho_itens.*
@@ -434,7 +442,7 @@ export async function alterarQuantidadeNoCarrinho(usuarioId, carrinhoId, codigoP
   const produto = await erp.buscarProduto(existente.codigo_produto);
 
   db.transaction(() => {
-    buscarCarrinhoDoUsuario(usuarioId, carrinhoId, db);
+    recusarSeFechando(buscarCarrinhoDoUsuario(usuarioId, carrinhoId, db));
 
     const linha = db.prepare('SELECT id FROM carrinho_itens WHERE id = ? AND carrinho_id = ?')
       .get(existente.id, carrinhoId);
@@ -459,7 +467,7 @@ export async function alterarQuantidadeNoCarrinho(usuarioId, carrinhoId, codigoP
 
 export async function removerItemNoCarrinho(usuarioId, carrinhoId, codigoProduto, db = obterBanco()) {
   db.transaction(() => {
-    buscarCarrinhoDoUsuario(usuarioId, carrinhoId, db);
+    recusarSeFechando(buscarCarrinhoDoUsuario(usuarioId, carrinhoId, db));
 
     const resultado = db.prepare(`
       DELETE FROM carrinho_itens
@@ -480,7 +488,7 @@ export async function removerItemNoCarrinho(usuarioId, carrinhoId, codigoProduto
 
 export function limparItens(usuarioId, carrinhoId, db = obterBanco()) {
   db.transaction(() => {
-    buscarCarrinhoDoUsuario(usuarioId, carrinhoId, db);
+    recusarSeFechando(buscarCarrinhoDoUsuario(usuarioId, carrinhoId, db));
     db.prepare(`
       DELETE FROM carrinho_itens
        WHERE carrinho_id IN (SELECT id FROM carrinhos WHERE id = ? AND usuario_id = ?)
