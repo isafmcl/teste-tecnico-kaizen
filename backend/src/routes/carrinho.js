@@ -6,9 +6,9 @@ import {
   lerCarrinho,
   limparCarrinho,
   removerItem,
-  MAXIMO_POR_ITEM,
 } from '../services/carrinhoService.js';
-import { ColetorDeErros, exigirObjeto, inteiroPositivo, textoObrigatorio } from '../lib/validacao.js';
+import { exigirObjeto } from '../lib/validacao.js';
+import { validarInclusaoDeItem, validarQuantidadeDoItem } from './validarItemCarrinho.js';
 
 export const rotasCarrinho = Router();
 
@@ -20,24 +20,13 @@ rotasCarrinho.get('/', async (req, res) => {
 });
 
 rotasCarrinho.post('/itens', async (req, res) => {
-  const corpo = exigirObjeto(req.body);
-  const erros = new ColetorDeErros();
-
-  const codigo = textoObrigatorio(corpo.codigo_produto, 'codigo_produto', erros, { min: 1, max: 40 });
-  const quantidade = inteiroPositivo(corpo.quantidade ?? 1, 'quantidade', erros, { max: MAXIMO_POR_ITEM });
-
-  erros.lancarSeInvalido('Nao foi possivel adicionar ao carrinho.');
+  const { codigo, quantidade } = validarInclusaoDeItem(exigirObjeto(req.body));
 
   res.status(201).json({ dados: await adicionarItem(req.usuario.id, codigo, quantidade) });
 });
 
 rotasCarrinho.patch('/itens/:codigo', async (req, res) => {
-  const corpo = exigirObjeto(req.body);
-  const erros = new ColetorDeErros();
-
-  const quantidade = inteiroPositivo(corpo.quantidade, 'quantidade', erros, { max: MAXIMO_POR_ITEM });
-
-  erros.lancarSeInvalido('Quantidade invalida.');
+  const quantidade = validarQuantidadeDoItem(exigirObjeto(req.body));
 
   res.json({ dados: await alterarQuantidade(req.usuario.id, req.params.codigo, quantidade) });
 });

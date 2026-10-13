@@ -10,6 +10,7 @@ import { rotaNaoEncontrada, tratarErros } from './middleware/erros.js';
 import { identificarRequisicao, registrarAcesso } from './middleware/requisicao.js';
 import { rotasAuth } from './routes/auth.js';
 import { rotasCarrinho } from './routes/carrinho.js';
+import { rotasCarrinhos } from './routes/carrinhos.js';
 import { rotasCatalogo } from './routes/catalogo.js';
 import { rotasEnderecos } from './routes/enderecos.js';
 import { rotasImagens } from './routes/imagens.js';
@@ -53,6 +54,7 @@ export function criarApp() {
   // Exigem sessao (o autenticar fica dentro de cada router).
   app.use('/api/perfil', rotasPerfil);
   app.use('/api/enderecos', rotasEnderecos);
+  app.use('/api/carrinhos', rotasCarrinhos);
   app.use('/api/carrinho', rotasCarrinho);
   app.use('/api/pedidos', rotasPedidos);
 

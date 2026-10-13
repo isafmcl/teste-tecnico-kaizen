@@ -19,7 +19,7 @@ rotasPedidos.use(autenticar);
 
 /**
  * POST /api/pedidos - checkout.
- * Pega o carrinho do usuario, manda para o ERP e limpa o carrinho.
+ * Trava o carrinho informado (ou o ativo), manda para o ERP e apaga esse carrinho.
  */
 rotasPedidos.post('/', async (req, res) => {
   const corpo = exigirObjeto(req.body);
@@ -27,10 +27,16 @@ rotasPedidos.post('/', async (req, res) => {
 
   const enderecoId = inteiroPositivo(corpo.endereco_id, 'endereco_id', erros, { max: 1e9 });
   const observacao = textoOpcional(corpo.observacao, 'observacao', erros, { max: 300 });
+  const carrinhoAusente = corpo.carrinho_id === undefined
+    || corpo.carrinho_id === null
+    || corpo.carrinho_id === '';
+  const carrinhoId = carrinhoAusente
+    ? null
+    : inteiroPositivo(corpo.carrinho_id, 'carrinho_id', erros, { max: 1e9 });
 
   erros.lancarSeInvalido('Nao foi possivel fechar o pedido.');
 
-  const pedido = await finalizarPedido(req.usuario, enderecoId, observacao);
+  const pedido = await finalizarPedido(req.usuario, enderecoId, observacao, carrinhoId);
 
   res.status(201).location(`/api/pedidos/${pedido.numero}`).json({ dados: pedido });
 });

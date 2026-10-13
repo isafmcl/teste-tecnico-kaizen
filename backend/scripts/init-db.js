@@ -25,7 +25,7 @@ const db = obterBanco();
 aplicarSchema(db);
 console.log(`schema aplicado em: ${config.caminhoBanco}`);
 
-for (const tabela of ['usuarios', 'enderecos', 'carrinho_itens', 'pedidos_usuario']) {
+for (const tabela of ['usuarios', 'enderecos', 'carrinhos', 'carrinho_itens', 'pedidos_usuario']) {
   const { total } = db.prepare(`SELECT COUNT(*) AS total FROM ${tabela}`).get();
   console.log(`  ${tabela}: ${total}`);
 }

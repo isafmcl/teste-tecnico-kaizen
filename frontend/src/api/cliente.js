@@ -117,8 +117,33 @@ export const api = {
     limpar: () => requisitar('/carrinho', { metodo: 'DELETE' }),
   },
 
+  carrinhos: {
+    listar: () => requisitar('/carrinhos'),
+    criar: (nome) => requisitar('/carrinhos', {
+      metodo: 'POST',
+      corpo: nome == null || nome === '' ? {} : { nome },
+    }),
+    renomear: (id, nome) => requisitar(`/carrinhos/${id}`, { metodo: 'PATCH', corpo: { nome } }),
+    apagar: (id) => requisitar(`/carrinhos/${id}`, { metodo: 'DELETE' }),
+    ativar: (id) => requisitar(`/carrinhos/${id}/ativar`, { metodo: 'POST' }),
+    ler: (id) => requisitar(`/carrinhos/${id}`),
+    adicionar: (id, codigo_produto, quantidade = 1) =>
+      requisitar(`/carrinhos/${id}/itens`, { metodo: 'POST', corpo: { codigo_produto, quantidade } }),
+    alterar: (id, codigo, quantidade) =>
+      requisitar(`/carrinhos/${id}/itens/${encodeURIComponent(codigo)}`, {
+        metodo: 'PATCH',
+        corpo: { quantidade },
+      }),
+    remover: (id, codigo) =>
+      requisitar(`/carrinhos/${id}/itens/${encodeURIComponent(codigo)}`, { metodo: 'DELETE' }),
+    limpar: (id) => requisitar(`/carrinhos/${id}/itens`, { metodo: 'DELETE' }),
+  },
+
   pedidos: {
-    criar: (dados) => requisitar('/pedidos', { metodo: 'POST', corpo: dados }),
+    criar: ({ carrinho_id, ...dados } = {}) => requisitar('/pedidos', {
+      metodo: 'POST',
+      corpo: carrinho_id == null ? dados : { ...dados, carrinho_id },
+    }),
     listar: (parametros) => requisitar('/pedidos', { parametros }),
     detalhe: (numero) => requisitar(`/pedidos/${encodeURIComponent(numero)}`),
   },
