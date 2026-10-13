@@ -28,6 +28,12 @@ const TAMANHOS_BOTAO = {
   grande: 'px-6 py-3 text-base',
 };
 
+export function classesBotao(variante = 'primario', tamanho = 'medio', extra = '') {
+  return `inline-flex items-center justify-center gap-2 rounded-lg font-semibold
+    transition-colors disabled:cursor-not-allowed
+    ${ESTILOS_BOTAO[variante]} ${TAMANHOS_BOTAO[tamanho]} ${extra}`;
+}
+
 export function Botao({
   variante = 'primario',
   tamanho = 'medio',
@@ -40,9 +46,7 @@ export function Botao({
     <button
       {...props}
       disabled={props.disabled || carregando}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg font-semibold
-        transition-colors disabled:cursor-not-allowed
-        ${ESTILOS_BOTAO[variante]} ${TAMANHOS_BOTAO[tamanho]} ${className}`}
+      className={classesBotao(variante, tamanho, className)}
     >
       {carregando && (
         <span

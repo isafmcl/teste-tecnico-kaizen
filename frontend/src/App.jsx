@@ -1,6 +1,8 @@
 import { Link, Route, Routes } from 'react-router-dom';
 import { Cabecalho } from './componentes/Cabecalho.jsx';
+import { PainelCarrinho } from './componentes/painel/PainelCarrinho.jsx';
 import { RotaProtegida } from './componentes/RotaProtegida.jsx';
+import { useCarrinho } from './contextos/CarrinhoContext.jsx';
 import { Botao, EstadoVazio } from './componentes/ui.jsx';
 import { Cadastro } from './paginas/Cadastro.jsx';
 import { Carrinho } from './paginas/Carrinho.jsx';
@@ -23,8 +25,11 @@ function NaoEncontrada() {
 }
 
 export function App() {
+  const { painelAberto } = useCarrinho();
+
   return (
-    <div className="flex min-h-screen flex-col">
+    <>
+    <div inert={painelAberto ? true : undefined} className="flex min-h-screen flex-col">
       <a
         href="#conteudo"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50
@@ -63,5 +68,7 @@ export function App() {
         </div>
       </footer>
     </div>
+    <PainelCarrinho />
+    </>
   );
 }

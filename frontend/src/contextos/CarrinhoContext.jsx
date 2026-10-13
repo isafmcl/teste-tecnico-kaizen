@@ -24,8 +24,11 @@ export function ProvedorCarrinho({ children }) {
   const [carrinhos, setCarrinhos] = useState([]);
   const [carrinhoAtivo, setCarrinhoAtivo] = useState(VAZIO);
   const [carregando, setCarregando] = useState(false);
+  const [painelAberto, setPainelAberto] = useState(false);
   const usuarioId = usuario?.id ?? null;
   const idAtivo = useRef(null);
+  const gatilhoPainel = useRef(null);
+  const painelEsteveAberto = useRef(false);
 
   // Selo da sessao: a resposta so entra no estado se o usuario de agora
   // for o mesmo de quando a requisicao saiu. Trocar de conta no meio
@@ -104,6 +107,7 @@ export function ProvedorCarrinho({ children }) {
       setCarrinhos([]);
       setCarrinhoAtivo(VAZIO);
       setCarregando(false);
+      setPainelAberto(false);
       return;
     }
 
@@ -178,6 +182,28 @@ export function ProvedorCarrinho({ children }) {
     aplicarAtivo(leitura?.dados);
   }), [comSelo, aplicarAtivo]);
 
+  const abrirPainel = useCallback(() => {
+    const ativo = document.activeElement;
+    gatilhoPainel.current = ativo instanceof HTMLElement ? ativo : null;
+    setPainelAberto(true);
+  }, []);
+
+  const fecharPainel = useCallback(() => {
+    setPainelAberto(false);
+  }, []);
+
+  useEffect(() => {
+    if (painelAberto) {
+      painelEsteveAberto.current = true;
+      return;
+    }
+    if (!painelEsteveAberto.current) return;
+    painelEsteveAberto.current = false;
+    const gatilho = gatilhoPainel.current;
+    gatilhoPainel.current = null;
+    gatilho?.focus();
+  }, [painelAberto]);
+
   const ativar = useCallback((id) => comSelo(async () => {
     const lista = await api.carrinhos.ativar(id);
     const leitura = await api.carrinhos.ler(id);
@@ -203,6 +229,9 @@ export function ProvedorCarrinho({ children }) {
       apagar,
       ativar,
       setCarrinho,
+      painelAberto,
+      abrirPainel,
+      fecharPainel,
     }),
     [
       carrinhoAtivo,
@@ -218,6 +247,9 @@ export function ProvedorCarrinho({ children }) {
       apagar,
       ativar,
       setCarrinho,
+      painelAberto,
+      abrirPainel,
+      fecharPainel,
     ],
   );
 
