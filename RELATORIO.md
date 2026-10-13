@@ -8,7 +8,17 @@
 
 ## 1. Subindo o projeto
 
-Subi o backend (`npm ci`, `.env`, `npm run db:init`, `npm run dev`) e o frontend (`npm ci`, `npm run dev`). No Windows, os comandos com `rm -rf` e `&&` não funcionam no PowerShell; usei `Remove-Item` e um comando por linha.
+**Localmente:** subi o backend (`npm ci`, `.env`, `npm run db:init`, `npm run dev`) e o frontend (`npm ci`, `npm run dev`). No Windows, os comandos com `rm -rf` e `&&` não funcionam no PowerShell; usei `Remove-Item` e um comando por linha.
+
+**Com Docker:** empacotei a aplicação num container só, porque em produção o backend serve o site pronto, como descreve a ARQUITETURA. Para subir do zero, na raiz do projeto:
+
+    Copy-Item backend\.env.example backend\.env
+    notepad backend\.env   (preencher JWT_SEGREDO, ERP_URL e ERP_TOKEN)
+    docker compose up --build
+
+A loja abre em `http://localhost:3001`. O `.env` é lido na hora de subir e não entra na imagem; o banco fica num volume e sobrevive a um novo build; as migrações rodam sozinhas ao subir.
+
+**Publicada:** https://kaizen-loja-isabelle.onrender.com (Render, a partir do mesmo Dockerfile). O serviço dorme após 15 minutos sem uso (o primeiro acesso depois disso leva cerca de 1 minuto) e o banco é recriado quando ele reinicia, então contas e carrinhos criados lá não são permanentes. Como a loja usa o token do ERP no servidor, qualquer visitante consegue fechar pedidos no SIAC de teste: é o comportamento esperado de uma loja, mas fica registrado. Em produção o cookie de sessão só é enviado em HTTPS; por isso a publicação precisa de HTTPS, e acesso pelo IP de um servidor sem certificado não mantém o login.
 
 O mais confuso: o README fala em `SIAC_URL`/`SIAC_TOKEN`, mas o código lê `ERP_URL`/`ERP_TOKEN`. Quem segue o README erra o nome e não percebe, porque o código tinha os valores do ERP escritos como padrão e subia mesmo assim (ver Problema 2).
 
