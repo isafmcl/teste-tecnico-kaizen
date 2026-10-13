@@ -1,7 +1,10 @@
-node_modules
-.env
-*.db*
-dist
+**/node_modules
+**/.env
+**/*.db*
+**/dist
 .git
-test
+.github
+backend/test
 SPEC.md
+CLAUDE.md
+docs
